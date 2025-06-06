@@ -21,6 +21,8 @@ import subprocess
 import json
 import tempfile
 import mimetypes
+from pathlib import Path
+from typing import Dict, List
 
 try:
     import magic
@@ -32,7 +34,6 @@ from PIL import Image, ImageSequence, ImageFilter
 from . import matrix
 
 open_utf8 = partial(open, encoding='UTF-8')
-
 
 def guess_mime(data: bytes) -> str:
     mime = None
@@ -311,3 +312,15 @@ def make_sticker(mxc: str, width: int, height: int, size: int,
         },
         "msgtype": "m.sticker",
     }
+
+
+def add_thumbnails(stickers: List[matrix.StickerInfo], stickers_data: Dict[str, bytes], output_dir: str) -> None:
+    thumbnails = Path(output_dir, "thumbnails")
+    thumbnails.mkdir(parents=True, exist_ok=True)
+
+    for sticker in stickers:       
+        image_data, _, _ = _convert_image(stickers_data[sticker["url"]], guess_mime(stickers_data[sticker["url"]]))
+        
+        name = sticker["url"].split("/")[-1]
+        thumbnail_path = thumbnails / name
+        thumbnail_path.write_bytes(image_data)
